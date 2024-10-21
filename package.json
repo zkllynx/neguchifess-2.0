@@ -1,0 +1,29 @@
+{
+  "name": "neguchifess-2.0",
+  "version": "1.0.0",
+  "description": "auto menfess bot",
+  "main": "main.js",
+  "scripts": {
+    "test": "start"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zkllynx/neguchifess-2.0.git"
+  },
+  "keywords": [
+    "menfess",
+    "telegram",
+    "bot",
+    "menfess"
+  ],
+  "author": "neguchi",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/zkllynx/neguchifess-2.0/issues"
+  },
+  "homepage": "https://github.com/zkllynx/neguchifess-2.0#readme",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "telegraf": "^4.16.3"
+  }
+}
