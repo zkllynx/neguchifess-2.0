@@ -1,1 +1,26 @@
-"./config/users.json"
+{
+  "1902135285": {
+    "name": "Morientes",
+    "username": "xsat4n",
+    "user_id": 1902135285,
+    "limit": 3
+  },
+  "1975404793": {
+    "name": "Ferdinand",
+    "username": "ChibaiLanciau",
+    "user_id": 1975404793,
+    "limit": 3
+  },
+  "7521849193": {
+    "name": "k7 cawa🇱🇦🇧🇶",
+    "username": "dBahenoI",
+    "user_id": 7521849193,
+    "limit": 2
+  },
+  "6967162108": {
+    "name": "⁣⁫⁣⁫⁣⁫⁣⁫⁣⁫⁣⁫⁣⁫⁣⁫⁣⁫⁣⁫⁣⁫⁣⁫⁣⁫⁣⁫⁣⁫⁣⁫⁣⁫⁣⁣⁫⁣⁫⁣⁫⁣⁫⁣⁫⁣",
+    "username": "N/A",
+    "user_id": 6967162108,
+    "limit": 2
+  }
+}

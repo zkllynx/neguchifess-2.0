@@ -6,13 +6,12 @@ dotenv.config();
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-
-const usersPath = './config/users.json';
-const messageStorePath = './config/messageStore.json';
-const activeUsersPath = './config/activeUsers.json';
 const channelId = process.env.CHANNEL_ID;
 const groupId = process.env.GROUP_ID;
 
+const usersPath = './config/users.json';
+const activeUsers = './config/activeUsers.json';
+const messageStore = './config/messageStore.json';
 
 // Load existing user data from JSON
 const readUserData = () => {
@@ -34,11 +33,25 @@ const writeUserData = (userData) => {
   }
 };
 
+// Load existing user data from JSON
+const readUserData2 = (filePath) => {
+  try {
+    const data = fs.readFileSync(filePath, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Error loading user data from', filePath, ':', error);
+    return {};
+  }
+};
 
-// Load existing data from JSON files
-let messageStore = readUserData(messageStorePath);
-let activeUsers = readUserData(activeUsersPath);
-const users = readUserData(usersPath);
+// Function to write user data to specified file
+const writeUserData2 = (filePath, data) => {
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+  } catch (error) {
+    console.error('Error writing to', filePath, ':', error);
+  }
+};
 
 // Handle /start command
 bot.command('start', (ctx) => {
@@ -139,6 +152,7 @@ bot.on('text', async (ctx) => {
   const userId = ctx.from.id;
   const isAdmin = process.env.ADMIN_ID == userId;
   const isCreator = process.env.CREATOR_USER_ID == userId;
+  const users = readUserData();
 
   // Define image URLs for #bzboy and #bzgirl
   const bzBoyImage = 'https://t.me/statuslpmtest/2';
@@ -147,18 +161,16 @@ bot.on('text', async (ctx) => {
   const messageText = ctx.message.text || '';
   const prefixes = ['#bzask', '#bzboy', '#bzgirl'];
   const validPrefix = prefixes.find(prefix => messageText.includes(prefix));
-  const groupId = process.env.GROUP_ID;
 
   // Handle messages that are not forwarded from a channel
   if (!ctx.message.forward_from_chat || ctx.message.forward_from_chat.type !== 'channel') {
     if (ctx.chat.type !== 'group' && ctx.chat.type !== 'supergroup') {
       if (isAdmin || isCreator || (users[userId] && users[userId].limit > 0)) {
         if (validPrefix) {
-          const hasJoinedChannelResult = isAdmin || await hasJoinedChannel(ctx, userId, process.env.CHANNEL_ID);
+          const hasJoinedChannelResult = isAdmin || await hasJoinedChannel(ctx, userId, channelId);
           const hasJoinedGroupResult = isAdmin || await hasJoinedGroup(ctx, userId, groupId);
 
           if (hasJoinedChannelResult && hasJoinedGroupResult) {
-            const channelId = process.env.CHANNEL_ID;
 
             try {
               let sentMessage;
@@ -179,11 +191,12 @@ bot.on('text', async (ctx) => {
 
               // Handle user limits
               if (!users[userId]) {
-                users[userId] = { limit: process.env.DEFAULT_LIMIT || 5 }; // Ensure user exists with default limit
+                users[userId] = {}; 
               }
               if (!isAdmin && !isCreator && users[userId].limit !== undefined) {
                 users[userId].limit -= 1;
-                writeUserData(usersPath, users); // Save updated user data
+
+                writeUserData(users); // Save updated user data
               }
 
               // Send confirmation with options to view or delete the message
@@ -223,7 +236,7 @@ bot.on('text', async (ctx) => {
             });
           }
         } else {
-          ctx.reply('Invalid prefix. Please use one of the specified prefixes.');
+          ctx.reply('Invalid prefix. Please use #bzask, #bzboy or #bzgirl.');
         }
       } else {
         ctx.reply('Forwarding limit reached. Please wait until the limit is reset.');
@@ -232,40 +245,20 @@ bot.on('text', async (ctx) => {
   }
 });
 
+
 // Function to handle all non-text messages
 const handleNonTextMessages = async (ctx) => {
-  // Reply to the user that sending non-text messages is not allowed
-  await ctx.reply('Sending non-text messages is not allowed in this chat. Please send only text.');
-  console.log(`User ${ctx.from.id} attempted to send a non-text message.`);
+  // Check if the chat type is private
+  if (ctx.chat.type === 'private') {
+    // Reply to the user that sending non-text messages is not allowed
+    await ctx.reply('Sending non-text messages is not allowed in this chat. Please send only text.');
+    console.log(`User ${ctx.from.id} attempted to send a non-text message.`);
+  }
 };
 
-// Listen for various types of non-text messages
+// Listen for various types of non-text messages only in private chats
 bot.on(['photo', 'video', 'voice', 'document', 'audio', 'location', 'sticker', 'contact'], handleNonTextMessages);
 
-
-bot.on('photo', async (ctx) => {
-  const message = ctx.message;
-  const caption = message.caption || ''; // Get the caption of the photo
-  const groupId = process.env.GROUP_ID; // The ID of your group
-
-  // Check if the message is from the specified group
-  if (ctx.chat.id === groupId) {
-    // Check if the caption contains the prefix #bzboy or #bzgirl
-    if (caption.includes('#bzboy') || caption.includes('#bzgirl')) {
-      try {
-        // Attempt to delete the message
-        await ctx.deleteMessage();
-        console.log('Message deleted due to forbidden prefix in caption.');
-      } catch (error) {
-        console.error('Failed to delete message:', error);
-      }
-    }
-  }
-});
-
-bot.on('status', async (ctx) => {
-  
-});
 
 // Handle callback queries
 bot.on('callback_query', async (ctx) => {
@@ -275,7 +268,7 @@ bot.on('callback_query', async (ctx) => {
     case 'delete_forwarded':
       try {
         // Delete the forwarded message
-        await ctx.telegram.deleteMessage(process.env.CHANNEL_ID, data.messageId);
+        await ctx.telegram.deleteMessage(channelId, data.messageId);
         ctx.answerCbQuery('Forwarded message deleted successfully.');
       } catch (error) {
         console.error('Error deleting forwarded message:', error);
